@@ -1,0 +1,440 @@
+<template>
+  <div class="col">
+    <div
+      v-if="!timerFake"
+      id="myCard"
+      class="q-pa-md row items-start q-gutter-md small-screen"
+    >
+      <q-card>
+        <div class="q-gutter-sm">
+          <div class="row">
+            <div class="col-4 text-left">
+              <q-checkbox v-model="special" color="purple" label="Special" />
+            </div>
+            <div class="col-8 text-right q-pa-sm">
+              <q-btn
+                round
+                @click="openMode('Chronometer')"
+                class="text-purple"
+                flat
+                icon="directions_run"
+              />
+              <q-btn
+                round
+                @click="openList"
+                class="text-purple"
+                flat
+                icon="receipt_long"
+              ></q-btn>
+            </div>
+          </div>
+        </div>
+        <q-card-section class="my-card" :class="timerActive">
+          <div class="text-h6">PC {{ PC }}</div>
+          <div class="text-h6">
+            <q-input
+              label="time"
+              dark
+              borderless
+              v-model="minutes"
+              mask="#########"
+              label-color="white"
+              color="white"
+              :input-style="{
+                fontSize: '2.5rem',
+                textAlign: 'center',
+                fontWeight: 'light',
+              }"
+            />
+            <q-input
+              dark
+              label
+              Pending-color="white"
+              v-model="name"
+              :disable="session"
+              color="white"
+              borderless
+              label="name"
+            />
+            <q-select
+              dark
+              label-color="white"
+              v-model="category"
+              :options="categoryOptions"
+              color="white"
+              borderless
+              label="category"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-actions class="text-purple" align="around">
+          <q-btn @click="startTimer" flat icon="play_circle_filled"></q-btn>
+        </q-card-actions>
+      </q-card>
+    </div>
+
+    <div
+      v-if="timerFake"
+      id="myCard"
+      class="q-pa-md row items-start q-gutter-md small-screen"
+    >
+      <q-card class="my-card">
+        <q-card-section :class="timerActive">
+          <div class="row">
+            <div class="col-6 text-left">
+              <q-btn
+                flat
+                :disable="timerRun"
+                @click="sessionSave"
+                class="text-orange"
+                icon="save"
+              />
+            </div>
+            <div class="col-6 text-right">
+              <q-btn
+                :disable="timerRun"
+                flat
+                @click="sessionContinue"
+                class="text-orange"
+                icon="arrow_forward_ios"
+              />
+            </div>
+          </div>
+          <div class="text-h6 q-pt-sm">{{ name }}</div>
+          <div class="text-h6">PC {{ PC }}</div>
+          <div class="text-h6">
+            <q-circular-progress
+              :value="completed"
+              show-value
+              size="130px"
+              color="orange"
+              class="q-ma-md"
+            >
+              <div class="text-h4 text-weight-light">{{ minutes }} : {{ seconds }}</div>
+            </q-circular-progress>
+          </div>
+        </q-card-section>
+
+        <q-card-actions v-if="session" class="text-purple" align="around">
+          <q-btn  v-if="timerRun" @click="stopTimer" flat icon="pause" />
+          <q-btn :disable="time_zero" v-if="!timerRun" @click="resumenTimer" flat icon="play_circle_filled" />
+          <q-btn :disable="timerRun" @click="sessionComplete" flat icon="check_circle" />
+          <q-btn :disable="timerRun" @click="resetTimer" flat icon="content_cut"></q-btn>
+        </q-card-actions>
+      </q-card>
+    </div>
+    <pending :owner="PC" v-on:closeDialog="pendingDialog" v-if="openDept"></pending>
+  </div>
+</template>
+<script>
+import moment from "moment";
+import { uid } from "quasar";
+import { Dialog } from "quasar";
+
+import worker from "../../statics/js/time.worker";
+import { Notify } from "quasar";
+import Pending from "./Pending.vue";
+export default {
+  name: "timer",
+  components: {
+    Pending,
+  },
+  props: {
+    PC: Number,
+  },
+  data() {
+    return {
+      /*
+       *Global
+       */
+      id: null,
+      mode: null,
+      special: false,
+      openDept: false,
+      date: null,
+      /*
+       *Timer
+       */
+      
+      time_zero:null,
+      seconds: null,
+      minutes: null,
+      interval: null,
+      setMinutes: null,
+      setMilliseconds: null,
+      accumulator: 0,
+      timerFake: false,
+      timerRun: null,
+      completed: null,
+      time_start: null,
+      time_left: null,
+      time_left: null,
+
+      /*
+       *Session and User
+       */
+      session: null,
+      sessionStart: null,
+      sessionEnd: null,
+      category: null,
+      categoryOptions: ["In come", "Debt", "Pending"],
+      status: null,
+      moneyPerMinutes: 33.33333333333333,
+      minutesAccumalator: null,
+      name: null,
+    };
+  },
+  created() {},
+  watch: {},
+  computed: {
+    timerActive() {
+      if (!this.timerFake) {
+        return "bg-purple text-white text-center";
+      } else {
+        return "bg-purple-6 text-white text-center";
+      }
+    },
+    valueEarn() {
+      if (this.setMinutes) {
+        if (this.special == true) {
+          this.moneyPerMinutes = 26.667;
+        }
+        if (this.minutesAccumalator >= 180) {
+          this.special = true;
+          this.moneyPerMinutes = 26.667;
+        }
+         return Math.round(this.minutesAccumalator * this.moneyPerMinutes);
+
+      }
+    },
+  },
+  methods: {
+    startTimer() {
+      if (this.minutes != null) {
+        this.mode = "timer";
+        this.sessionActive();
+        this.timerRun = true;
+
+        if (this.interval == null) {
+          this.minutes = parseInt(this.minutes) - 1;
+        }
+
+        this.setMinutes = parseInt(this.minutes) + 1;
+        this.minutesAccumalator = this.minutesAccumalator + this.setMinutes;
+        this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
+
+        if (this.name == null) {
+          this.name = "Anonymous";
+        }
+        if (this.category == null) {
+          this.category = this.categoryOptions[0];
+        }
+
+        this.interval = setInterval(this.timer, 100);
+      }
+    },
+
+    timer() {
+      let el = worker();
+      el.workerTimer(
+        this.timerFake,
+        this.minutes,
+        this.seconds,
+        this.accumulator,
+        this.completed,
+        this.setMilliseconds
+      ).then((data) => {
+        this.timerFake = data.fake;
+        this.minutes = data.minutes;
+        this.seconds = data.seconds;
+        this.accumulator = data.accumulator;
+        this.completed = data.completed;
+        this.setMilliseconds = data.setMilliseconds;
+
+        if (data.stop) {
+          this.$emit("timeEnd");
+          this.stopTimer();
+          this.time_zero = true;
+          this.$q.notify({
+            type: "positive",
+            message: `PC${this.Nombre} time ended`,
+            icon: "announcement",
+          });
+        }
+      });
+    },
+    resumenTimer() {
+      if (this.session) {
+        this.interval = setInterval(this.timer, 1000);
+        this.timerRun = true;
+      }
+    },
+
+    stopTimer() {
+      clearInterval(this.interval);
+      this.timerRun = false;
+    },
+    resetTimer() {
+      this.mode = null;
+      this.special = false;
+      this.time_zero = null;
+      this.timerFake = false;
+      this.minutes = null;
+      this.seconds = null;
+      this.accumulator = 0;
+      this.completed = null;
+      this.setMilliseconds = null;
+      this.setMinutes = null;
+      this.interval = null;
+
+      this.session = null;
+      this.sessionStart = null;
+      this.sessionEnd = null;
+      this.status = null;
+      this.time_left = null;
+      this.minutesAccumalator = null;
+      this.name = null;
+    },
+
+    sessionActive() {
+      this.session = true;
+      this.sessionStart = Date.now();
+    },
+
+    sessionContinue() {
+      if (this.session == true) {
+        this.timerFake = false;
+        this.minutes = null;
+        this.seconds = null;
+        this.accumulator = 0;
+        this.completed = null;
+        this.setMilliseconds = null;
+        this.setMinutes = null;
+        this.interval = null;
+      }
+    },
+
+    sessionSave() {
+      if (this.session) {
+        if(this.category != 'Debt'){
+          this.category = this.categoryOptions[2];
+          this.status = "still pending";
+          let register = this.newRegister();
+          this.dialogResume(register);
+        }else{
+          this.status = 'still debt'
+          let register = this.newRegister();
+          this.dialogResume(register);
+        }
+      }
+      if (this.sessionChronometer) {
+        this.$q.dialog({
+          title: "Not working yet",
+        });
+      }
+    },
+
+    sessionComplete() {
+      if (this.session) {
+        let register = this.newRegister();
+        this.dialogResume(register);
+      }
+    },
+
+    getMillisecondsFromMinutes(data) {
+      return data * 60000;
+    },
+    openList() {
+      this.openDept = true;
+    },
+
+    newRegister() {
+      this.sessionEnd = Date.now();
+      return {
+        id: uid(),
+        special: this.special,
+        mode: this.mode,
+        pc: this.PC,
+        name: this.name,
+        date: this.sessionStart,
+        time_start: this.sessionStart,
+        time_end: this.sessionEnd,
+        minutes: this.minutesAccumalator,
+        earn: this.valueEarn,
+        category: this.category,
+        time_left: this.minutes + ":" + this.seconds,
+        status: this.status,
+        money_minutes: this.moneyPerMinutes,
+      };
+    },
+
+    dialogResume(data) {
+      moment.locale("es-mx");
+      let start = moment(data.time_start).format("LLLL");
+      let end = moment(data.time_end).format("LLLL");
+      this.$q
+        .dialog({
+          title: "Are you sure?",
+          cancel: true,
+          html: true,
+          ok: {
+            push: true,
+            color: "purple",
+          },
+
+          cancel: {
+            push: true,
+            color: "deep-purple-10",
+          },
+          message: `<p> <b>name:</b> ${data.name}</p>
+        <p> <b>PC:</b> ${data.pc}</p>
+        <p> <b>earn:</b> ${data.earn}</p> 
+        <p> <b>discount:</b> ${data.special}</p> 
+        <p> <b>minutes:</b> ${data.minutes}</p>
+        <p> <b>time_left:</b> ${data.time_left}</p> 
+        <p> <b>status:</b> ${data.status}</p>
+        <p> <b>category:</b> ${data.category}</p>
+        <p> <b>time_start:</b> ${start}</p>
+        <p> <b>time_end:</b> ${end}</p>`,
+          position: "bottom",
+        })
+        .onOk(() => {
+          this.sendNewRegister(data);
+        })
+        .onCancel(() => {})
+        .onDismiss(() => {});
+    },
+
+    sendNewRegister(data) {
+      this.$axios
+        .post(`${process.env.API}/api/new-time`, data)
+        .then((response) => {
+          this.$store.commit("warehouse/getRegisters");
+          console.log(response.data);
+        })
+        .catch((error) => {
+          this.$store.commit("warehouse/getRegisters");
+          console.log(error);
+        });
+    },
+    pendingDialog(payload) {
+      this.openMode("timerPending");
+      this.openDept = payload;
+    },
+
+    openMode(payload) {
+      this.$emit("openMode", payload);
+    },
+  },
+};
+</script>
+
+<style lang="sass">
+.tamaño
+    font-size:30px
+
+#myCard
+  @media(max-width: $breakpoint-xs-max )
+        display: block
+</style>
