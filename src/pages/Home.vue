@@ -9,14 +9,15 @@
           round
           icon="add"
         />
-
-       
       </div>
       <div @click="touchStart" :class="cardScreen">
         <div class="col-3" v-for="pc in 4" :key="pc">
           <card v-on:timeEnd="myTime" :PC="pc"></card>
         </div>
       </div>
+    </div>
+    <div class="text-center">
+      {{ count }}
     </div>
 
     <p>{{ numero }}</p>
@@ -46,16 +47,27 @@ export default {
        * size screen
        */
       windowWidth: window.innerWidth,
+      count: 0,
+      interval: null,
     };
   },
 
   created() {},
+  watch: {
+    "$q.appVisible"(val) {
+      if (val) {
+        this.stopTimer();
+      } else {
+        this.startTimer();
+      }
+      // console.log(val ? "App became visible" : "App went in the background");
+    },
+  },
 
   mounted() {
     window.addEventListener("resize", () => {
       this.windowWidth = window.innerWidth;
     });
-      //this.playSound();
   },
   computed: {
     isMobile() {
@@ -69,6 +81,17 @@ export default {
     },
   },
   methods: {
+    startTimer() {
+      this.interval = setInterval(this.timer, 1000);
+    },
+    stopTimer() {
+      clearInterval(this.interval);
+    },
+    timer() {
+      this.count++;
+      // console.log(this.count);
+    },
+
     playSound() {
       let el = document.getElementById("sound");
       el.play();
@@ -89,7 +112,6 @@ export default {
         this.toucheActive = true;
       }
     },
-    
   },
 };
 </script>

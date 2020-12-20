@@ -231,7 +231,7 @@ export default {
         this.minutesAccumalator = this.minutesAccumalator + this.setMinutes;
         this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
 
-        this.interval = setInterval(this.timer, 100);
+        this.interval = setInterval(this.timer, 1000);
       }
     },
 

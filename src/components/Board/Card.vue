@@ -33,11 +33,17 @@ export default {
         case "Minutes":
           return "timer";
           break;
-        case "Pending":
-          return "pending";
+        case "Debt":
+          return "pause";
+          break;
+        case "In come":
+          return "monetization_on";
           break;
         case "Debt":
           return "pause";
+          break;
+        case "Pending":
+          return "pending_actions";
           break;
       }
     },

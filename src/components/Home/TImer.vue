@@ -233,7 +233,7 @@ export default {
           this.category = this.categoryOptions[0];
         }
 
-        this.interval = setInterval(this.timer, 100);
+        this.interval = setInterval(this.timer, 1000);
       }
     },
 
