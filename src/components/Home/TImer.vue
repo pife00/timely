@@ -46,16 +46,7 @@
                 fontWeight: 'light',
               }"
             />
-            <q-input
-              dark
-              label
-              Pending-color="white"
-              v-model="name"
-              :disable="session"
-              color="white"
-              borderless
-              label="name"
-            />
+            <name v-on:name="getName"></name>
             <q-select
               dark
               label-color="white"
@@ -117,8 +108,14 @@
         </q-card-section>
 
         <q-card-actions v-if="session" class="text-purple" align="around">
-          <q-btn  v-if="timerRun" @click="stopTimer" flat icon="pause" />
-          <q-btn :disable="time_zero" v-if="!timerRun" @click="resumenTimer" flat icon="play_circle_filled" />
+          <q-btn v-if="timerRun" @click="stopTimer" flat icon="pause" />
+          <q-btn
+            :disable="time_zero"
+            v-if="!timerRun"
+            @click="resumenTimer"
+            flat
+            icon="play_circle_filled"
+          />
           <q-btn :disable="timerRun" @click="sessionComplete" flat icon="check_circle" />
           <q-btn :disable="timerRun" @click="resetTimer" flat icon="content_cut"></q-btn>
         </q-card-actions>
@@ -131,7 +128,7 @@
 import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
-
+import name from "src/components/Universal/fields";
 import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
@@ -139,6 +136,7 @@ export default {
   name: "timer",
   components: {
     Pending,
+    name,
   },
   props: {
     PC: Number,
@@ -149,6 +147,7 @@ export default {
        *Global
        */
       id: null,
+      idUser: null,
       mode: null,
       special: false,
       openDept: false,
@@ -156,8 +155,8 @@ export default {
       /*
        *Timer
        */
-      
-      time_zero:null,
+
+      time_zero: null,
       seconds: null,
       minutes: null,
       interval: null,
@@ -204,12 +203,15 @@ export default {
           this.special = true;
           this.moneyPerMinutes = 26.667;
         }
-         return Math.round(this.minutesAccumalator * this.moneyPerMinutes);
-
+        return Math.round(this.minutesAccumalator * this.moneyPerMinutes);
       }
     },
   },
   methods: {
+    getName(payload) {
+      this.name = payload[0].name;
+      this.idUser = payload[0].id;
+    },
     startTimer() {
       if (this.minutes != null) {
         this.mode = "timer";
@@ -258,7 +260,7 @@ export default {
           this.time_zero = true;
           this.$q.notify({
             type: "positive",
-            message: `PC${this.Nombre} time ended`,
+            message: `PC${this.PC} time ended`,
             icon: "announcement",
           });
         }
@@ -317,13 +319,13 @@ export default {
 
     sessionSave() {
       if (this.session) {
-        if(this.category != 'Debt'){
+        if (this.category != "Debt") {
           this.category = this.categoryOptions[2];
           this.status = "still pending";
           let register = this.newRegister();
           this.dialogResume(register);
-        }else{
-          this.status = 'still debt'
+        } else {
+          this.status = "still debt";
           let register = this.newRegister();
           this.dialogResume(register);
         }
@@ -353,6 +355,7 @@ export default {
       this.sessionEnd = Date.now();
       return {
         id: uid(),
+        idUser: this.idUser,
         special: this.special,
         mode: this.mode,
         pc: this.PC,
@@ -389,10 +392,10 @@ export default {
           },
           message: `<p> <b>name:</b> ${data.name}</p>
         <p> <b>PC:</b> ${data.pc}</p>
-        <p> <b>earn:</b> ${data.earn}</p> 
-        <p> <b>discount:</b> ${data.special}</p> 
+        <p> <b>earn:</b> ${data.earn}</p>
+        <p> <b>discount:</b> ${data.special}</p>
         <p> <b>minutes:</b> ${data.minutes}</p>
-        <p> <b>time_left:</b> ${data.time_left}</p> 
+        <p> <b>time_left:</b> ${data.time_left}</p>
         <p> <b>status:</b> ${data.status}</p>
         <p> <b>category:</b> ${data.category}</p>
         <p> <b>time_start:</b> ${start}</p>
@@ -407,10 +410,27 @@ export default {
     },
 
     sendNewRegister(data) {
+      let formData = new FormData();
+      formData.append("id", data.id);
+      formData.append("idUser", data.idUser);
+      formData.append("special", data.special);
+      formData.append("mode", data.mode);
+      formData.append("pc", data.pc);
+      formData.append("name", data.name);
+      formData.append("date", data.date);
+      formData.append("time_start", data.time_start);
+      formData.append("time_end", data.time_end);
+      formData.append("minutes", data.minutes);
+      formData.append("earn", data.earn);
+      formData.append("category", data.category);
+      formData.append("time_left", data.time_left);
+      formData.append("status", data.status);
+      formData.append("money_minutes", data.money_minutes);
       this.$axios
-        .post(`${process.env.API}/api/new-time`, data)
+        .post(`${process.env.API}/api/new-time`, formData)
         .then((response) => {
           this.$store.commit("warehouse/getRegisters");
+          this.$store.commit("warehouse/getUsers");
           console.log(response.data);
         })
         .catch((error) => {

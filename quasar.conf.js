@@ -6,7 +6,7 @@
 // Configuration for your app
 // https://quasar.dev/quasar-cli/quasar-conf-js
 let API_LOCAL = 'http://localhost:3000';
-let API_PRODUCTION = '';
+let API_PRODUCTION = 'https://timely-backend.herokuapp.com';
 module.exports = function (/* ctx */) {
   return {
     // https://quasar.dev/quasar-cli/supporting-ts

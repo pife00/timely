@@ -1,92 +1,201 @@
 <template>
   <div>
-    
-      <div class="col-6 q-mt-md">
-        <filters :names="names" ></filters>
-     
+    <div class="col-6 q-mt-md">
+      <filters :options="options" :names="names"></filters>
     </div>
-    <div v-for="register in list" :key="register.id">
-      <card mode='registers' :register="register"></card>
+    <div class="col-6 justify-end">
+      <dates v-on:date="getDate" :options="options"></dates>
+    </div>
+    <div v-if="dates" class="constrain row justify-center text-h6 text-indigo">
+      {{ prettyTitle(dates)[0] }} - {{ prettyTitle(dates)[1] }}
+    </div>
+    <div class="constrain">
+      <hr />
+    </div>
+    <div v-for="register in listWithFilters" :key="register.id">
+      <card mode="registers" :register="register"></card>
     </div>
   </div>
 </template>
 
 <script>
+import { openDB } from "idb";
+import moment from "moment";
 import Card from "src/components/Registers/Card.vue";
 import Filters from "src/components/Universal/filters.vue";
-import { Dialog } from "quasar";
+import Dates from "src/components/Universal/Dates";
+import { Dialog, uid } from "quasar";
 export default {
-  components: { Card, Filters },
+  components: { Card, Filters, Dates },
   name: "PageRegisters",
   data() {
     return {
-      
+      options: ["Today", "Yesterday", "Rest"],
+      filter: "Today",
+      dates: null,
     };
   },
 
+  activated() {
+    this.db();
+  },
+  mounted() {
+    this.listenForOffline();
+  },
+
   computed: {
-
-    reg:{
-      get:function(){
-        return this.$store.state.warehouse.registers
-      },
-      set:function(){
-
-      }
+    Navigator() {
+      return navigator.onLine;
     },
 
-    names:{
-        get:function(){
-           return this.namesFilters()
+    reg: {
+      get: function () {
+        return this.$store.state.warehouse.registers;
       },
-      set:function(){
-      }
+      set: function () {},
     },
 
-    person:{
-      get:function(){
+    names: {
+      get: function () {
+        if (this.listWithFilters) {
+          return this.namesFilters();
+        }
+      },
+      set: function () {},
+    },
+
+    person: {
+      get: function () {
         return this.$store.state.warehouse.person;
       },
-      set:function(){
+      set: function () {},
+    },
+
+    list: {
+      get: function () {
+        if (this.person == null) {
+          return this.reg;
+        } else {
+          return this.personFilter();
+        }
+      },
+      set: function () {},
+    },
+
+    listWithFilters() {
+      if (this.filter != null) {
+        if (this.filter == "Today") {
+          return this.today;
+        }
+      } else {
+        return this.list;
       }
     },
 
-    list:{
-      get:function(){
-        if(this.person == null ){
-          return this.reg;
-        }else{
-          return this.personFilter();
-        }
-
-      },
-      set:function(){
-
-      },
+    today() {
+      if (this.dates != null) {
+        return this.orderToday(this.list);
+      }
     },
-
-    today(){
-
+    yesterday() {},
+    serviceWorkerSupport() {
+      if ("serviceWorker" in navigator) {
+        return true;
+      } else {
+        return false;
+      }
     },
-    yesterday(){
-      
-    }
   },
 
   methods: {
-    
-    namesFilters(){
-         var names = [...new Set(this.reg.map((el) => {
+    getDate(payload) {
+      this.dates = payload;
+      if (this.dates == null) {
+        this.filter = null;
+      } else {
+        this.filter = "Today";
+      }
+    },
+
+    prettyTitle(value) {
+      let from = moment(value.startDay).format("LL");
+      let to = moment(value.endToday).format("LL");
+
+      return [from, to];
+    },
+
+    orderToday(array) {
+      return array.filter((el) => {
+        if (el.date > this.dates.startDay && el.date < this.dates.endToday) {
+          return el.date;
+        }
+      });
+    },
+
+    async db() {
+      const db = await openDB("workbox-background-sync").then((db) => {
+        db.getAll("requests")
+          .then((failedRequest) => {
+            failedRequest.forEach((fail) => {
+              let request = new Request(fail.requestData.url, fail.requestData);
+
+              request
+                .formData()
+                .then((formData) => {
+                  let offlineRegister = {};
+                  offlineRegister.id = formData.get("id");
+                  offlineRegister.name = formData.get("name");
+                  offlineRegister.category = formData.get("category");
+                  offlineRegister.date = parseInt(formData.get("date"));
+
+                  offlineRegister.time_start = parseInt(formData.get("time_start"));
+                  offlineRegister.time_end = parseInt(formData.get("time_end"));
+                  offlineRegister.minutes = parseInt(formData.get("minutes"));
+                  offlineRegister.time_left = parseInt(formData.get("time_left"));
+                  offlineRegister.earn = formData.get("earn");
+                  offlineRegister.off = true;
+
+                  if (!navigator.onLine) {
+                    if (this.list.some((id) => id.id == offlineRegister.id)) {
+                    } else {
+                      this.list.unshift(offlineRegister);
+                    }
+                  }
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            });
+          })
+          .catch((error) => {});
+      });
+    },
+
+    listenForOffline() {
+      const channel = new BroadcastChannel("sw-messages");
+      channel.addEventListener("message", (event) => {
+        if (event.data.msg == "offline post uploaded") {
+          console.log("mensaje recibido");
+          let postOffline = this.list.filter((post) => post.off == true).length;
+          this.list[postOffline - 1].off = false;
+        }
+      });
+    },
+
+    namesFilters() {
+      var names = [
+        ...new Set(
+          this.listWithFilters.map((el) => {
             return el.name;
           })
         ),
-      ]; 
-      return names
+      ];
+      return names;
     },
 
-    personFilter(){
-      return this.reg.filter(el=>{
-        return el.name == this.person
+    personFilter() {
+      return this.reg.filter((el) => {
+        return el.name == this.person;
       });
     },
 

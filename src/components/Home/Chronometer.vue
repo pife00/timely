@@ -9,23 +9,13 @@
         <div class="q-gutter-sm">
           <div class="col-6 text-right text-orange-10 q-pa-sm">
             <q-btn round @click="openMode('Timer')" flat icon="timer" />
-            <q-btn round @click="openList"  flat icon="receipt_long"></q-btn>
+            <q-btn round @click="openList" flat icon="receipt_long"></q-btn>
           </div>
         </div>
         <q-card-section class="my-card" :class="timerActive">
           <div class="text-h6">PC {{ PC }}</div>
           <div class="text-h6">
-            
-            <q-input
-              dark
-              label
-              Pending-color="white"
-              v-model="name"
-              :disable="session"
-              color="white"
-              borderless
-              label="name"
-            />
+            <name v-on:name="getName"></name>
             <q-select
               dark
               label-color="white"
@@ -96,7 +86,7 @@
 import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
-
+import name from "src/components/Universal/fields";
 import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
@@ -104,6 +94,7 @@ export default {
   name: "chronometer",
   components: {
     Pending,
+    name,
   },
   props: {
     PC: Number,
@@ -114,6 +105,7 @@ export default {
        *Global
        */
       id: null,
+      idUser: null,
       mode: null,
       special: false,
       openDept: false,
@@ -140,7 +132,7 @@ export default {
       session: null,
       sessionStart: null,
       sessionEnd: null,
-      category: null,
+      category: "In come",
       categoryOptions: ["In come", "Debt", "Pending"],
       status: null,
       moneyPerMinutes: 0.000555555,
@@ -166,6 +158,11 @@ export default {
     },
   },
   methods: {
+    getName(payload) {
+      this.name = payload[0].name;
+      this.idUser = payload[0].id;
+    },
+
     startChronometer() {
       this.mode = "chronometer";
       this.chronometerRun = true;
@@ -231,7 +228,6 @@ export default {
       this.time_left = null;
       this.minutesAccumalator = null;
       this.name = null;
-
     },
 
     sessionComplete() {
@@ -251,10 +247,11 @@ export default {
     newRegisterChronometer() {
       return {
         id: uid(),
+        idUser: this.idUser,
         name: this.name,
         special: this.special,
         pc: this.PC,
-        date:this.sessionStart,
+        date: this.sessionStart,
         mode: this.mode,
         time_start: this.sessionStart,
         time_end: Date.now(),
@@ -307,24 +304,41 @@ export default {
     },
 
     sendNewRegister(data) {
+      let formData = new FormData();
+      formData.append("id", data.id);
+      formData.append("idUser", data.idUser);
+      formData.append("special", data.special);
+      formData.append("mode", data.mode);
+      formData.append("pc", data.pc);
+      formData.append("name", data.name);
+      formData.append("date", data.date);
+      formData.append("time_start", data.time_start);
+      formData.append("time_end", data.time_end);
+      formData.append("minutes", data.minutes);
+      formData.append("earn", data.earn);
+      formData.append("category", data.category);
+      formData.append("time_left", data.time_left);
+      formData.append("status", data.status);
+      formData.append("money_minutes", data.money_minutes);
       this.$axios
-        .post(`${process.env.API}/api/new-time`, data)
+        .post(`${process.env.API}/api/new-time`, formData)
         .then((response) => {
           this.$store.commit("warehouse/getRegisters");
           console.log(response.data);
         })
         .catch((error) => {
           this.$store.commit("warehouse/getRegisters");
+          this.$store.commit("warehouse/getUsers");
           console.log(error);
         });
     },
     pendingDialog(payload) {
-      this.openMode('timerPending');
+      this.openMode("timerPending");
       this.openDept = payload;
     },
-    openMode(payload){
-      this.$emit('openMode',payload);
-    }
+    openMode(payload) {
+      this.$emit("openMode", payload);
+    },
   },
 };
 </script>
@@ -334,6 +348,8 @@ export default {
     font-size:30px
 
 #myCard
+  @media(max-width: $breakpoint-md-max )
+        display: block
   @media(max-width: $breakpoint-xs-max )
         display: block
 </style>

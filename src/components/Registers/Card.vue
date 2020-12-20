@@ -1,7 +1,10 @@
 <template>
   <div class="constrain">
     <div v-if="!edit" class="q-pa-md">
-      <q-card class="my-card q-pa-md">
+      <div v-if="register.off == true" class="text-right">
+        <q-badge color="indigo" label="off-line" text-color="white" />
+      </div>
+      <q-card class="my-card q-pa-md" :class="offline">
         <q-card-section>
           <div class="row">
             <div class="col-12">
@@ -16,7 +19,7 @@
                 <hr />
               </div>
               <div class="text-right small-screen-only">
-                <q-btn-dropdown flat class="q-pb-sm" icon="toc">
+                <q-btn-dropdown v-if="!register.off" flat class="q-pb-sm" icon="toc">
                   <q-list>
                     <q-item
                       v-if="mode == 'registers'"
@@ -150,7 +153,7 @@
                 }}</small>
               </div>
             </div>
-            <div class="col-2 text-center large-screen-only">
+            <div v-if="!register.off" class="col-2 text-center large-screen-only">
               <p class="text-h6">Actions</p>
               <q-btn
                 @click="editRegister"
@@ -299,6 +302,7 @@ export default {
     dataComputed() {
       return {
         id: this.register.id,
+        idUser: this.register.idUser,
         pc: this.register.pc,
         special: this.register.special,
         category: this.register.category,
@@ -311,6 +315,12 @@ export default {
         minutes: this.register.minutes,
         earn: this.register.earn,
         date: this.register.date,
+      };
+    },
+    offline() {
+      return {
+        '"my-card q-pa-md bg-grey-4': this.register.off == true,
+        '"my-card q-pa-md': this.register.off == false,
       };
     },
   },
@@ -354,13 +364,28 @@ export default {
       this.edit = true;
     },
     updateRegister() {
-      this.articule.minutes = parseInt(this.articule.minutes);
-      this.articule.earn = parseInt(this.articule.earn);
-      // console.log(this.articule);
+      let data = this.articule;
+      let formData = new FormData();
+
+      formData.append("id", data.id);
+      formData.append("special", data.special);
+      formData.append("mode", data.mode);
+      formData.append("pc", data.pc);
+      formData.append("name", data.name);
+      formData.append("date", data.date);
+      formData.append("time_start", data.time_start);
+      formData.append("time_end", data.time_end);
+      formData.append("minutes", data.minutes);
+      formData.append("earn", data.earn);
+      formData.append("category", data.category);
+      formData.append("time_left", data.time_left);
+      formData.append("status", data.status);
+      formData.append("money_minutes", data.money_minutes);
       this.$axios
-        .post(`${process.env.API}/api/update-time`, this.articule)
+        .post(`${process.env.API}/api/update-time`, formData)
         .then((response) => {
           this.$store.commit("warehouse/getRegisters");
+          this.$store.commit("warehouse/getUsers");
           this.edit = false;
           console.log(response.data);
         })
@@ -391,11 +416,13 @@ export default {
     deleteRegister() {
       let id = {
         id: this.articule.id,
+        idUser: this.articule.idUser,
       };
       this.$axios
         .post(`${process.env.API}/api/delete-time`, id)
         .then((response) => {
           this.$store.commit("warehouse/getRegisters");
+          this.$store.commit("warehouse/getUsers");
           console.log(response.data);
         })
         .catch((error) => {

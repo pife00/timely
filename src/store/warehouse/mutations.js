@@ -1,4 +1,5 @@
 import axios from 'axios'
+
 export const getRegisters = (state) => {
  axios.get(`${process.env.API}/api/registers`)
   .then((response) => {
@@ -8,6 +9,16 @@ export const getRegisters = (state) => {
     console.log(error);
   });
 }
+
+export const getUsers = (state) => {
+  axios.get(`${process.env.API}/api/users`)
+   .then((response) => {
+     state.users = response.data;
+   })
+   .catch((error) => {
+     console.log(error);
+   });
+ }
 
 export const pendingPerson = (state,payload) =>{
   state.person = payload;

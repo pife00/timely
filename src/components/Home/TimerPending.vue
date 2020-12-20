@@ -5,16 +5,16 @@
       id="myCard"
       class="q-pa-md row items-start q-gutter-md small-screen"
     >
-      <q-card>
+      <q-card class="pending">
         <div class="q-gutter-sm">
           <div class="row">
-            <div class="col-6 text-left">
-              <q-checkbox v-model="special" color="purple" label="Special" />
+            <div class="col-2 text-left">
+              <q-checkbox v-model="special" color="indigo" label="Special" />
             </div>
-            <div class="col-6 text-right text-indigo-6 q-pa-sm">
+            <div class="col-10 text-right text-indigo-6 q-pa-sm">
               <q-btn round @click="openMode('Chronometer')" flat icon="directions_run" />
               <q-btn round @click="openMode('Timer')" flat icon="timer"></q-btn>
-              <q-btn round @click="openList"  flat icon="receipt_long"></q-btn>
+              <q-btn round @click="openList" flat icon="receipt_long"></q-btn>
             </div>
           </div>
         </div>
@@ -98,7 +98,13 @@
 
         <q-card-actions v-if="session" class="text-indigo-6" align="around">
           <q-btn v-if="timerRun" @click="stopTimer" flat icon="pause" />
-          <q-btn :disable="time_zero" v-if="!timerRun" @click="resumenTimer" flat icon="play_circle_filled" />
+          <q-btn
+            :disable="time_zero"
+            v-if="!timerRun"
+            @click="resumenTimer"
+            flat
+            icon="play_circle_filled"
+          />
           <q-btn :disable="timerRun" @click="sessionComplete" flat icon="check_circle" />
           <q-btn :disable="timerRun" @click="resetTimer" flat icon="content_cut"></q-btn>
         </q-card-actions>
@@ -129,6 +135,7 @@ export default {
        *Global
        */
       id: null,
+      idUser: null,
       mode: null,
       special: false,
       openDept: false,
@@ -137,7 +144,7 @@ export default {
       /*
        *Timer
        */
-      time_zero:null,
+      time_zero: null,
       seconds: null,
       minutes: null,
       minutesReal: null,
@@ -195,6 +202,7 @@ export default {
       this.date = this.personPending.date;
 
       this.id = this.personPending.id;
+      this.idUser = this.personPending.idUser;
       this.minutesReal = this.personPending.minutes;
       this.minutes = parseInt(this.personPending.time_left);
       this.mode = this.personPending.mode;
@@ -254,7 +262,7 @@ export default {
         if (data.stop) {
           this.$emit("timeEnd");
           this.stopTimer();
-          this.time_zero = true
+          this.time_zero = true;
           this.$q.notify({
             type: "positive",
             message: `PC${this.Nombre} time ended`,
@@ -295,17 +303,16 @@ export default {
     },
 
     sessionSave() {
-      
-      if(this.category != 'Debt'){
-          this.category = this.categoryOptions[2];
-          this.status = "still pending";
-          let register = this.newRegister();
-          this.dialogResume(register);
-        }else{
-          this.status = 'still debt'
-          let register = this.newRegister();
-          this.dialogResume(register);
-        }
+      if (this.category != "Debt") {
+        this.category = this.categoryOptions[2];
+        this.status = "still pending";
+        let register = this.newRegister();
+        this.dialogResume(register);
+      } else {
+        this.status = "still debt";
+        let register = this.newRegister();
+        this.dialogResume(register);
+      }
     },
 
     sessionComplete() {
@@ -330,6 +337,7 @@ export default {
     newRegister() {
       return {
         id: this.id,
+        idUser: this.idUser,
         special: this.special,
         mode: this.mode,
         pc: this.PC,
@@ -398,10 +406,28 @@ export default {
     },
 
     updateRegister(data) {
+      let formData = new FormData();
+      formData.append("id", data.id);
+      formData.append("idUser", data.idUser);
+      formData.append("special", data.special);
+      formData.append("mode", data.mode);
+      formData.append("pc", data.pc);
+      formData.append("name", data.name);
+      formData.append("date", data.date);
+      formData.append("time_start", data.time_start);
+      formData.append("time_end", data.time_end);
+      formData.append("minutes", data.minutes);
+      formData.append("earn", data.earn);
+      formData.append("category", data.category);
+      formData.append("time_left", data.time_left);
+      formData.append("status", data.status);
+      formData.append("money_minutes", data.money_minutes);
       this.$axios
-        .post(`${process.env.API}/api/update-time`, data)
+        .post(`${process.env.API}/api/update-time`, formData)
         .then((response) => {
           this.$store.commit("warehouse/getRegisters");
+          this.$store.commit("warehouse/getUsers");
+          console.log(response.data);
         })
         .catch((error) => {
           console.log(error);
@@ -412,10 +438,16 @@ export default {
 </script>
 
 <style lang="sass">
+
+.pending
+  @media(min-width: $breakpoint-md-min )
+    width: 220px
+
 .tamaño
     font-size:30px
 
 #myCard
+
   @media(max-width: $breakpoint-xs-max )
         display: block
 </style>

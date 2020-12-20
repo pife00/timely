@@ -5,10 +5,10 @@
 </template>
 <script>
 export default {
-  name: 'App',
+  name: "App",
   created() {
-    this.$store.commit('warehouse/getRegisters')
+    this.$store.commit("warehouse/getRegisters");
+    this.$store.commit("warehouse/getUsers");
   },
-}
-
+};
 </script>
