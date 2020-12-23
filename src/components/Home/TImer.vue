@@ -46,7 +46,7 @@
                 fontWeight: 'light',
               }"
             />
-            <name v-on:name="getName"></name>
+            <name :provisionalName="name" v-on:name="getName"></name>
             <q-select
               dark
               label-color="white"
@@ -61,6 +61,8 @@
 
         <q-card-actions class="text-purple" align="around">
           <q-btn @click="startTimer" flat icon="play_circle_filled"></q-btn>
+          <q-btn v-show="sessionNext" @click="sessionComplete" flat icon="check_circle" />
+          <q-btn v-show="sessionNext" @click="resetTimer" flat icon="content_cut"></q-btn>
         </q-card-actions>
       </q-card>
     </div>
@@ -129,7 +131,7 @@ import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
 import name from "src/components/Universal/fields";
-import worker from "../../statics/js/time.worker";
+//import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
 export default {
@@ -156,11 +158,14 @@ export default {
        *Timer
        */
 
+      time_rest: null,
       time_zero: null,
       seconds: null,
+      secondsRun: null,
       minutes: null,
       interval: null,
       setMinutes: null,
+      setSeconds: null,
       setMilliseconds: null,
       accumulator: 0,
       timerFake: false,
@@ -168,11 +173,11 @@ export default {
       completed: null,
       time_start: null,
       time_left: null,
-      time_left: null,
 
       /*
        *Session and User
        */
+      sessionNext: null,
       session: null,
       sessionStart: null,
       sessionEnd: null,
@@ -212,22 +217,22 @@ export default {
       this.name = payload[0].name;
       this.idUser = payload[0].id;
     },
+
     startTimer() {
       if (this.minutes != null) {
         this.mode = "timer";
         this.sessionActive();
         this.timerRun = true;
+        this.setSeconds = this.minutes * 60;
 
-        if (this.interval == null) {
-          this.minutes = parseInt(this.minutes) - 1;
-        }
-
-        this.setMinutes = parseInt(this.minutes) + 1;
+        this.setMinutes = parseInt(this.minutes);
         this.minutesAccumalator = this.minutesAccumalator + this.setMinutes;
         this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
 
         if (this.name == null) {
           this.name = "Anonymous";
+          let user = this.$store.getters["warehouse/UserByName"](this.name);
+          this.idUser = user[0].id;
         }
         if (this.category == null) {
           this.category = this.categoryOptions[0];
@@ -237,50 +242,62 @@ export default {
       }
     },
 
-    timer() {
-      let el = worker();
-      el.workerTimer(
-        this.timerFake,
-        this.minutes,
-        this.seconds,
-        this.accumulator,
-        this.completed,
-        this.setMilliseconds
-      ).then((data) => {
-        this.timerFake = data.fake;
-        this.minutes = data.minutes;
-        this.seconds = data.seconds;
-        this.accumulator = data.accumulator;
-        this.completed = data.completed;
-        this.setMilliseconds = data.setMilliseconds;
-
-        if (data.stop) {
-          this.$emit("timeEnd");
-          this.stopTimer();
-          this.time_zero = true;
-          this.$q.notify({
-            type: "positive",
-            message: `PC${this.PC} time ended`,
-            icon: "announcement",
-          });
-        }
-      });
+    convertTimer(value) {
+      let hour = value / 60;
+      let restHour = Math.floor(hour);
+      let minutes = Math.round((hour - restHour) * 60);
+      this.minutes = restHour;
+      this.seconds = minutes;
     },
+
+    restTimer(value) {
+      let hour = value / 60;
+      let restHour = Math.floor(hour);
+      let minutes = Math.round((hour - restHour) * 60);
+      let total = restHour + ":" + minutes;
+      return total;
+    },
+
+    timer() {
+      this.timerFake = true;
+
+      this.secondsRun = parseInt((new Date().getTime() - this.sessionStart) / 1000);
+
+      if (this.secondsRun >= this.setSeconds) {
+        this.stopTimer();
+        this.$emit("timeEnd");
+        this.time_zero = true;
+        this.$q.notify({
+          color: "purple",
+          message: `PC${this.PC} time ended`,
+          icon: "announcement",
+        });
+      }
+
+      this.convertTimer(this.secondsRun);
+      this.accumulator = this.accumulator + 1000;
+      this.completed = (this.accumulator / this.setMilliseconds) * 100;
+    },
+
     resumenTimer() {
       if (this.session) {
+        this.sessionStart = Date.now() - this.secondsRun * 1000;
         this.interval = setInterval(this.timer, 1000);
         this.timerRun = true;
       }
     },
 
     stopTimer() {
-      clearInterval(this.interval);
+      this.sessionStart = null;
       this.timerRun = false;
+      clearInterval(this.interval);
     },
     resetTimer() {
       this.mode = null;
       this.special = false;
       this.time_zero = null;
+      this.time_rest = null;
+      this.secondsRun = null;
       this.timerFake = false;
       this.minutes = null;
       this.seconds = null;
@@ -289,7 +306,7 @@ export default {
       this.setMilliseconds = null;
       this.setMinutes = null;
       this.interval = null;
-
+      this.date = null;
       this.session = null;
       this.sessionStart = null;
       this.sessionEnd = null;
@@ -302,17 +319,19 @@ export default {
     sessionActive() {
       this.session = true;
       this.sessionStart = Date.now();
+      this.date = Date.now();
     },
 
     sessionContinue() {
       if (this.session == true) {
+        this.sessionNext = true;
         this.timerFake = false;
         this.minutes = null;
         this.seconds = null;
         this.accumulator = 0;
         this.completed = null;
         this.setMilliseconds = null;
-        this.setMinutes = null;
+        // this.setMinutes = null;
         this.interval = null;
       }
     },
@@ -330,15 +349,11 @@ export default {
           this.dialogResume(register);
         }
       }
-      if (this.sessionChronometer) {
-        this.$q.dialog({
-          title: "Not working yet",
-        });
-      }
     },
 
     sessionComplete() {
       if (this.session) {
+        this.category = "In come";
         let register = this.newRegister();
         this.dialogResume(register);
       }
@@ -353,6 +368,8 @@ export default {
 
     newRegister() {
       this.sessionEnd = Date.now();
+      let timeRest = this.setSeconds - this.secondsRun;
+      this.time_left = this.restTimer(timeRest);
       return {
         id: uid(),
         idUser: this.idUser,
@@ -360,13 +377,13 @@ export default {
         mode: this.mode,
         pc: this.PC,
         name: this.name,
-        date: this.sessionStart,
-        time_start: this.sessionStart,
+        date: this.date,
+        time_start: this.date,
         time_end: this.sessionEnd,
         minutes: this.minutesAccumalator,
         earn: this.valueEarn,
         category: this.category,
-        time_left: this.minutes + ":" + this.seconds,
+        time_left: this.time_left,
         status: this.status,
         money_minutes: this.moneyPerMinutes,
       };

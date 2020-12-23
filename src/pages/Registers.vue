@@ -1,7 +1,15 @@
 <template>
   <div>
-    <div class="col-6 q-mt-md">
-      <filters :options="options" :names="names"></filters>
+    <div class="constrain">
+      <div class="row">
+        <div class="col-4">
+          <filters :options="options" :names="names"></filters>
+        </div>
+        <div class="col-4"></div>
+        <div class="col-4 justify-end">
+          <q-select v-model="category" :options="categories" label="Category" />
+        </div>
+      </div>
     </div>
     <div class="col-6 justify-end">
       <dates v-on:date="getDate" :options="options"></dates>
@@ -30,9 +38,11 @@ export default {
   name: "PageRegisters",
   data() {
     return {
-      options: ["Today", "Yesterday", "Rest"],
+      options: ["In come", "Debt", "Pending"],
+      categories: ["Await", "In come", "Debt", "Pending"],
       filter: "Today",
       dates: null,
+      category: "Await",
     };
   },
 
@@ -94,10 +104,16 @@ export default {
 
     today() {
       if (this.dates != null) {
-        return this.orderToday(this.list);
+        let today = this.orderToday(this.list);
+        if (this.category != "Await") {
+          return today.filter((el) => {
+            return el.category == this.category;
+          });
+        } else {
+          return today;
+        }
       }
     },
-    yesterday() {},
     serviceWorkerSupport() {
       if ("serviceWorker" in navigator) {
         return true;
@@ -118,8 +134,8 @@ export default {
     },
 
     prettyTitle(value) {
-      let from = moment(value.startDay).format("LL");
-      let to = moment(value.endToday).format("LL");
+      let from = moment(value.startDay).format("dddd Do YYYY");
+      let to = moment(value.endToday).format("dddd Do YYYY");
 
       return [from, to];
     },
@@ -197,13 +213,6 @@ export default {
       return this.reg.filter((el) => {
         return el.name == this.person;
       });
-    },
-
-    editar() {
-      console.log("editar");
-    },
-    eliminar() {
-      console.log("eliminar");
     },
   },
 };

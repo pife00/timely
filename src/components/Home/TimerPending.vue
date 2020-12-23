@@ -110,7 +110,7 @@
         </q-card-actions>
       </q-card>
     </div>
-    <pending :owner="PC" v-on:closeDialog="pendingDialog" v-if="openDept"></pending>
+    <pending :owner="PC" v-on:closeDialog="pendingDialog" v-if="openDebt"></pending>
   </div>
 </template>
 <script>
@@ -118,7 +118,7 @@ import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
 
-import worker from "../../statics/js/time.worker";
+//import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
 export default {
@@ -138,18 +138,21 @@ export default {
       idUser: null,
       mode: null,
       special: false,
-      openDept: false,
+      openDebt: false,
       date: null,
       earn: null,
       /*
        *Timer
        */
+      time_rest: null,
       time_zero: null,
       seconds: null,
       minutes: null,
       minutesReal: null,
+      secondsRun: null,
       interval: null,
       setMinutes: null,
+      setSeconds: null,
       setMilliseconds: null,
       accumulator: 0,
       timerFake: false,
@@ -176,6 +179,14 @@ export default {
   },
   created() {
     this.resumenPending();
+  },
+  watch: {
+    personPending(value) {
+      if (value == null || value == undefined) {
+      } else {
+        this.resumenPending();
+      }
+    },
   },
 
   computed: {
@@ -214,7 +225,7 @@ export default {
       this.time_end = this.personPending.time_end;
       this.time_left = this.personPending.time_left;
       this.time_start = this.personPending.time_start;
-      this.$store.commit("warehouse/personRegistersPending", null);
+      //this.$store.commit("warehouse/personRegistersPending", null);
     },
 
     startTimer() {
@@ -222,12 +233,9 @@ export default {
         this.mode = "timer";
         this.sessionActive();
         this.timerRun = true;
+        this.setSeconds = this.minutes * 60;
 
-        if (this.interval == null) {
-          this.minutes = parseInt(this.minutes) - 1;
-        }
-
-        this.setMinutes = parseInt(this.minutes) + 1;
+        this.setMinutes = parseInt(this.minutes);
         this.minutesAccumalator = this.minutesAccumalator + this.setMinutes;
         this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
 
@@ -235,44 +243,55 @@ export default {
       }
     },
 
+    timer() {
+      this.timerFake = true;
+
+      this.secondsRun = parseInt((new Date().getTime() - this.sessionStart) / 1000);
+
+      if (this.secondsRun >= this.setSeconds) {
+        this.stopTimer();
+        this.status = "completed";
+        this.$emit("timeEnd");
+        this.time_zero = true;
+        this.$q.notify({
+          color: "purple",
+          message: `PC${this.PC} time ended`,
+          icon: "announcement",
+        });
+      }
+
+      this.convertTimer(this.secondsRun);
+      this.accumulator = this.accumulator + 1000;
+      this.completed = (this.accumulator / this.setMilliseconds) * 100;
+    },
+
+    convertTimer(value) {
+      let hour = value / 60;
+      let restHour = Math.floor(hour);
+      let minutes = Math.round((hour - restHour) * 60);
+      this.minutes = restHour;
+      this.seconds = minutes;
+    },
+
+    restTimer(value) {
+      let hour = value / 60;
+      let restHour = Math.floor(hour);
+      let minutes = Math.round((hour - restHour) * 60);
+      let total = restHour + ":" + minutes;
+      return total;
+    },
+
     resumenTimer() {
       if (this.session) {
+        this.sessionStart = Date.now() - this.secondsRun * 1000;
         this.interval = setInterval(this.timer, 1000);
         this.timerRun = true;
       }
     },
 
-    timer() {
-      let el = worker();
-      el.workerTimer(
-        this.timerFake,
-        this.minutes,
-        this.seconds,
-        this.accumulator,
-        this.completed,
-        this.setMilliseconds
-      ).then((data) => {
-        this.timerFake = data.fake;
-        this.minutes = data.minutes;
-        this.seconds = data.seconds;
-        this.accumulator = data.accumulator;
-        this.completed = data.completed;
-        this.setMilliseconds = data.setMilliseconds;
-
-        if (data.stop) {
-          this.$emit("timeEnd");
-          this.stopTimer();
-          this.time_zero = true;
-          this.$q.notify({
-            type: "positive",
-            message: `PC${this.Nombre} time ended`,
-            icon: "announcement",
-          });
-        }
-      });
-    },
     stopTimer() {
       clearInterval(this.interval);
+      this.sessionStart = null;
       this.timerRun = false;
     },
     resetTimer() {
@@ -287,7 +306,7 @@ export default {
       this.setMilliseconds = null;
       this.setMinutes = null;
       this.interval = null;
-
+      this.secondsRun = null;
       this.session = null;
       this.sessionStart = null;
       this.sessionEnd = null;
@@ -317,9 +336,8 @@ export default {
 
     sessionComplete() {
       if (this.session) {
-        if (this.minutes == 0 && this.seconds == 0) {
+        if (this.status == "completed") {
           this.category = "In come";
-          this.status = "completed";
         }
 
         let register = this.newRegister();
@@ -331,10 +349,13 @@ export default {
       return data * 60000;
     },
     openList() {
-      this.openDept = true;
+      this.openDebt = true;
     },
 
     newRegister() {
+      this.sessionEnd = Date.now();
+      let timeRest = this.setSeconds - this.secondsRun;
+      this.time_left = this.restTimer(timeRest);
       return {
         id: this.id,
         idUser: this.idUser,
@@ -342,13 +363,13 @@ export default {
         mode: this.mode,
         pc: this.PC,
         name: this.name,
-        date: this.sessionStart,
-        time_start: this.sessionStart,
+        date: this.date,
+        time_start: this.date,
         time_end: this.time_end,
         minutes: this.minutesReal,
         earn: this.earn,
         category: this.category,
-        time_left: this.minutes + ":" + this.seconds,
+        time_left: this.time_left,
         status: this.status,
         money_minutes: this.moneyPerMinutes,
       };
@@ -393,12 +414,8 @@ export default {
         .onDismiss(() => {});
     },
 
-    openList() {
-      this.openDept = true;
-    },
-
     pendingDialog(payload) {
-      this.openDept = payload;
+      this.openDebt = payload;
     },
 
     openMode(payload) {

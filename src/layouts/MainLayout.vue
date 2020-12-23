@@ -47,8 +47,23 @@
       </keep-alive>
     </q-page-container>
 
-    <q-footer elevated class="bg bg-deep-purple-8 small-screen-only">
-      <q-tabs>
+    <q-footer elevated class="bg bg-deep-purple-8">
+      <div>
+        <q-banner v-if="showBannerInstaller" inline-actions class="text-white bg-red">
+          You can Install Timely app, do you want?.
+          <template v-slot:action>
+            <q-btn @click="neverShowAppInstaller" flat color="white" label="Never" />
+            <q-btn
+              @click="showBannerInstaller = false"
+              flat
+              color="white"
+              label="later"
+            />
+            <q-btn @click="installApp" flat color="white" label="Yes" />
+          </template>
+        </q-banner>
+      </div>
+      <q-tabs class="small-screen-only">
         <q-route-tab @click="resetPersonStore" label="HOME" icon="alarm" to="/" exact />
         <q-route-tab
           @click="resetPersonStore"
@@ -77,11 +92,30 @@
 </template>
 
 <script>
+let deferredPrompt;
 export default {
   name: "MainLayout",
   components: {},
+
   data() {
-    return {};
+    return {
+      showBannerInstaller: false,
+    };
+  },
+
+  mounted() {
+    let bannerStatus = this.$q.localStorage.getItem("neverShowAppInstallerBanner");
+
+    if (!bannerStatus) {
+      window.addEventListener("beforeinstallprompt", (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Update UI notify the user they can install the PWA
+        this.showBannerInstaller = true;
+      });
+    }
   },
 
   methods: {
@@ -91,6 +125,27 @@ export default {
       if (person != null) {
         this.$store.commit("warehouse/pendingPerson", null);
       }
+    },
+
+    installApp() {
+      // Hide the app provided install promotion
+      this.showBannerInstaller = false;
+      // Show the install prompt
+      deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === "accepted") {
+          this.neverShowAppInstaller();
+          console.log("User accepted the install prompt");
+        } else {
+          console.log("User dismissed the install prompt");
+        }
+      });
+    },
+
+    neverShowAppInstaller() {
+      this.showBannerInstaller = false;
+      this.$q.localStorage.set("neverShowAppInstallerBanner", true);
     },
   },
 };

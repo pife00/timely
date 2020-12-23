@@ -39,11 +39,11 @@ export default {
       } else {
         if (this.date.hasOwnProperty("to") && this.date.hasOwnProperty("from")) {
           let startDay = new Date(this.date.from);
-          let endToday = new Date(this.date.to);
+          let endToday = moment(this.date).endOf("day"); //new Date(this.date.to);
 
           let el = {
             startDay: startDay,
-            endToday: endToday,
+            endToday: endToday._d,
           };
           this.$emit("date", el);
           return el;

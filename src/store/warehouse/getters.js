@@ -26,3 +26,10 @@ export const UserById = state => payload => {
     return data.id == payload;
   });
 };
+
+export const UserByName = state => payload => {
+  
+  return state.users.filter(data => {
+    return data.name == payload;
+  });
+};

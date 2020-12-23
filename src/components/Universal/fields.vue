@@ -13,11 +13,14 @@
 <script>
 export default {
   name: "fields",
+  props: ["provisionalName"],
   data() {
     return {
-      choose: "",
+      choose: this.provisionalName ? this.provisionalName : null,
     };
   },
+
+  mounted() {},
 
   watch: {
     choose(newValue) {

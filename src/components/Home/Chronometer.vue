@@ -87,7 +87,7 @@ import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
 import name from "src/components/Universal/fields";
-import worker from "../../statics/js/time.worker";
+//import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
 export default {
@@ -118,13 +118,15 @@ export default {
       interval: null,
       setMinutes: null,
       setMilliseconds: null,
+      setSeconds: null,
+      secondsRun: null,
       accumulator: 0,
       timerFake: false,
       chronometerRun: null,
       completed: null,
       time_start: null,
       time_left: null,
-      time_left: null,
+      time_rest: null,
 
       /*
        *Session and User
@@ -167,11 +169,11 @@ export default {
       this.mode = "chronometer";
       this.chronometerRun = true;
       this.sessionActive();
-      if (this.interval == null) {
-        this.minutes = 0;
-      }
+
       if (this.name == null) {
         this.name = "Anonymous";
+        let user = this.$store.getters["warehouse/UserByName"](this.name);
+        this.idUser = user[0].id;
       }
       if (this.category == null) {
         this.category = "In come";
@@ -182,36 +184,44 @@ export default {
     resumenChronometer() {
       if (this.session) {
         this.interval = setInterval(this.chronometer, 1000);
+        this.sessionStart = Date.now() - this.secondsRun * 1000;
         this.chronometerRun = true;
       }
+    },
+
+    convertTimer(value) {
+      let hour = value / 60;
+      let restHour = Math.floor(hour);
+      let minutes = Math.round((hour - restHour) * 60);
+      this.minutes = restHour;
+      this.seconds = minutes;
     },
 
     stopChronometer() {
       clearInterval(this.interval);
       this.chronometerRun = false;
+      this.sessionStart = null;
     },
 
-    async chronometer() {
-      let el = worker();
-      await el
-        .workerChronometer(this.timerFake, this.minutes, this.seconds, this.accumulator)
-        .then((data) => {
-          this.timerFake = data.fake;
-          this.seconds = data.seconds;
-          this.minutes = data.minutes;
-          this.accumulator = data.accumulatorChronometer;
-        });
+    chronometer() {
+      this.timerFake = true;
+      this.secondsRun = parseInt((new Date().getTime() - this.sessionStart) / 1000);
+
+      this.convertTimer(this.secondsRun);
+
+      this.accumulator = this.accumulator + 1000;
     },
 
     sessionActive() {
       this.session = true;
       this.sessionStart = Date.now();
+      this.date = Date.now();
     },
 
     resetTimer() {
       this.mode = null;
       this.special = false;
-
+      this.secondsRun = null;
       this.timerFake = false;
       this.minutes = null;
       this.seconds = null;
@@ -220,7 +230,6 @@ export default {
       this.setMilliseconds = null;
       this.setMinutes = null;
       this.interval = null;
-
       this.session = null;
       this.sessionStart = null;
       this.sessionEnd = null;
@@ -251,9 +260,9 @@ export default {
         name: this.name,
         special: this.special,
         pc: this.PC,
-        date: this.sessionStart,
+        date: this.date,
         mode: this.mode,
-        time_start: this.sessionStart,
+        time_start: this.date,
         time_end: Date.now(),
         minutes: this.minutes,
         earn: this.valueEarn,
@@ -284,10 +293,10 @@ export default {
           message: `<p> <b>name:</b> ${data.name}</p>
         <p> <b>PC:</b> ${data.pc}</p>
          <p> <b>mode:</b> ${data.mode}</p>
-        <p> <b>earn:</b> ${data.earn}</p> 
-        <p> <b>discount:</b> ${data.special}</p> 
+        <p> <b>earn:</b> ${data.earn}</p>
+        <p> <b>discount:</b> ${data.special}</p>
         <p> <b>minutes:</b> ${data.minutes}</p>
-        <p> <b>time_left:</b> ${data.time_left}</p> 
+        <p> <b>time_left:</b> ${data.time_left}</p>
         <p> <b>status:</b> ${data.status}</p>
         <p> <b>category:</b> ${data.category}</p>
         <p> <b>time_start:</b> ${start}</p>

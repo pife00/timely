@@ -3,7 +3,7 @@
     <div class="constrain">
       <div class="text-center">
         <q-btn
-          @click="myTime"
+          @click="backCount"
           class="q-mt-sm bg-purple text-white"
           size="md"
           round
@@ -47,6 +47,7 @@ export default {
        * size screen
        */
       windowWidth: window.innerWidth,
+      date: null,
       count: 0,
       interval: null,
     };
@@ -54,14 +55,14 @@ export default {
 
   created() {},
   watch: {
-    "$q.appVisible"(val) {
+    /* "$q.appVisible"(val) {
       if (val) {
         this.stopTimer();
       } else {
         this.startTimer();
       }
-      // console.log(val ? "App became visible" : "App went in the background");
-    },
+     
+    },*/
   },
 
   mounted() {
@@ -81,15 +82,15 @@ export default {
     },
   },
   methods: {
-    startTimer() {
+    backCount() {
+      this.start = new Date().getTime();
       this.interval = setInterval(this.timer, 1000);
     },
     stopTimer() {
       clearInterval(this.interval);
     },
     timer() {
-      this.count++;
-      // console.log(this.count);
+      this.count = parseInt((new Date().getTime() - this.start) / 1000);
     },
 
     playSound() {
