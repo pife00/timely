@@ -1,6 +1,9 @@
 <template>
   <div>
     <div class="constrain">
+      <div class="text-center q-pa-lg" >
+      <refresh/>
+      </div>
       <div class="row">
         <div class="col-4">
           <filters :options="options" :names="names"></filters>
@@ -29,12 +32,14 @@
 <script>
 import { openDB } from "idb";
 import moment from "moment";
+
 import Card from "src/components/Registers/Card.vue";
 import Filters from "src/components/Universal/filters.vue";
 import Dates from "src/components/Universal/Dates";
+import refresh from "src/components/Universal/refresh";
 import { Dialog, uid } from "quasar";
 export default {
-  components: { Card, Filters, Dates },
+  components: { Card, Filters, Dates,refresh },
   name: "PageRegisters",
   data() {
     return {

@@ -18,32 +18,32 @@
             <div class="text-center col-4 text-indigo text-weight-bold">
               <p class="text-indigo text-weight-bold text-h6">Minutes</p>
               <div class="text-green">
-                <small class="text-body1 text-weight-bold"> {{ inComeMinutes }} </small>
+                <small class="text-body1 text-weight-bold"> {{ articule.inComeMinutes }} </small>
               </div>
               <div>
                 <small class="text-body1 text-purple text-weight-bold">
-                  {{ pendingMinutes }}
+                  {{ articule.pendingMinutes }}
                 </small>
               </div>
               <div class="text-grey">
-                <small class="text-body1 text-weight-bold"> {{ debtMinutes }} </small>
+                <small class="text-body1 text-weight-bold"> {{ articule.debtMinutes }} </small>
               </div>
             </div>
             <div class="text-right col-4 text-indigo text-weight-bold">
               <p class="text-indigo text-weight-bold text-h6">Money</p>
               <div>
                 <small class="text-body1 text-secondary text-weight-bold">
-                  {{ localMoney(inCome) }}
+                  {{ localMoney(articule.inCome) }}
                 </small>
               </div>
               <div>
                 <small class="text-body1 text-purple text-weight-bold">
-                  {{ localMoney(pending) }}
+                  {{ localMoney(articule.pending) }}
                 </small>
               </div>
               <div>
                 <small class="text-body1 text-grey text-weight-bold">
-                  {{ localMoney(debt) }}
+                  {{ localMoney(articule.debt) }}
                 </small>
               </div>
             </div>
@@ -63,26 +63,7 @@ export default {
   computed: {
     articule() {
       return this.user;
-    },
-    inComeMinutes() {
-      return this.sumMinutes(this.articule, "In come", "minutes");
-    },
-    pendingMinutes() {
-      return this.sumMinutes(this.articule, "Pending", "minutes");
-    },
-    debtMinutes() {
-      return this.sumMinutes(this.articule, "Debt", "minutes");
-    },
-
-    inCome() {
-      return this.sumMinutes(this.articule, "In come", "earn");
-    },
-    debt() {
-      return this.sumMinutes(this.articule, "Debt", "earn");
-    },
-    pending() {
-      return this.sumMinutes(this.articule, "Pending", "earn");
-    },
+    }
   },
   methods: {
     sumMinutes(data, category, value) {

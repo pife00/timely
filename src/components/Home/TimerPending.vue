@@ -261,8 +261,8 @@ export default {
       }
 
       this.convertTimer(this.secondsRun);
-      this.accumulator = this.accumulator + 1000;
-      this.completed = (this.accumulator / this.setMilliseconds) * 100;
+      this.accumulator =(this.secondsRun/this.setSeconds)*100;
+      this.completed = this.accumulator; 
     },
 
     convertTimer(value) {

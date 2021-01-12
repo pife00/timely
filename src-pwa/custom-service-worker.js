@@ -11,27 +11,31 @@ import { Queue } from "workbox-background-sync";
 precacheAndRoute(self.__WB_MANIFEST);
 let backgroundSyncSupport = 'sync' in self.registration? true:false;
 
+let queueRegister = null;
 
-let queueRegister = new Queue("myQueueRegisters", {
-    onSync: async ({ queue }) => {
-      let entry;
-      while ((entry = await queue.shiftRequest())) {
-        try {
-          await fetch(entry.request);
-          //  console.error('Replay successful for request', entry.request);
-          const channel = new BroadcastChannel("sw-messages");
-          channel.postMessage({ msg: "offline post uploaded" });
-        } catch (error) {
-          console.error("Replay failed for request", entry.request, error);
-
-          // Put the entry back in the queue and re-throw the error:
-          await queue.unshiftRequest(entry);
-          throw error;
+if(backgroundSyncSupport){
+  queueRegister = new Queue("myQueueRegisters", {
+      onSync: async ({ queue }) => {
+        let entry;
+        while ((entry = await queue.shiftRequest())) {
+          try {
+            await fetch(entry.request);
+            //  console.error('Replay successful for request', entry.request);
+            const channel = new BroadcastChannel("sw-messages");
+            channel.postMessage({ msg: "offline post uploaded" });
+          } catch (error) {
+            console.error("Replay failed for request", entry.request, error);
+  
+            // Put the entry back in the queue and re-throw the error:
+            await queue.unshiftRequest(entry);
+            throw error;
+          }
         }
+        console.log("Replay complete!");
       }
-      console.log("Replay complete!");
-    }
   });
+}
+
 
 
 registerRoute(
@@ -39,13 +43,15 @@ registerRoute(
   new NetworkFirst()
 );
 
-self.addEventListener("fetch", event => {
-  if(event.request.url.endsWith('/new-time')){
-    if(!self.navigator.onLine){
-      const promiseChain = fetch(event.request.clone()).catch(err => {
-        return queueRegister.pushRequest({ request: event.request });
-      });
-      event.waitUntil(promiseChain);
+if(backgroundSyncSupport){
+  self.addEventListener("fetch", event => {
+    if(event.request.url.endsWith('/new-time')){
+      if(!self.navigator.onLine){
+        const promiseChain = fetch(event.request.clone()).catch(err => {
+          return queueRegister.pushRequest({ request: event.request });
+        });
+        event.waitUntil(promiseChain);
+      }
     }
-  }
-});
+  });
+}

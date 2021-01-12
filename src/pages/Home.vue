@@ -16,12 +16,8 @@
         </div>
       </div>
     </div>
-    <div class="text-center">
-      {{ count }}
-    </div>
 
     <p>{{ numero }}</p>
-
     <audio v-show="showAudio" id="sound" controls>
       <source src="../statics/sounds/audio.mp3" type="audio/mp3" />
     </audio>
@@ -31,11 +27,13 @@
 <script>
 import card from "src/components/Home/Card.vue";
 import { Dialog } from "quasar";
+import { Platform } from "quasar";
 export default {
   name: "PageHome",
   components: {
     card,
   },
+  created() {},
 
   data() {
     return {
@@ -54,16 +52,7 @@ export default {
   },
 
   created() {},
-  watch: {
-    /* "$q.appVisible"(val) {
-      if (val) {
-        this.stopTimer();
-      } else {
-        this.startTimer();
-      }
-     
-    },*/
-  },
+  watch: {},
 
   mounted() {
     window.addEventListener("resize", () => {

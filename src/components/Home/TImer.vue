@@ -46,7 +46,7 @@
                 fontWeight: 'light',
               }"
             />
-            <name :provisionalName="name" v-on:name="getName"></name>
+            <name :provisionalName="name" mode="home" v-on:name="getName"></name>
             <q-select
               dark
               label-color="white"
@@ -104,7 +104,7 @@
               color="orange"
               class="q-ma-md"
             >
-              <div class="text-h4 text-weight-light">{{ minutes }} : {{ seconds }}</div>
+              <div class="text-h5 text-weight-light">{{ minutes }} : {{ seconds }}</div>
             </q-circular-progress>
           </div>
         </q-card-section>
@@ -131,6 +131,7 @@ import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
 import name from "src/components/Universal/fields";
+import { Platform } from "quasar";
 //import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
@@ -275,8 +276,9 @@ export default {
       }
 
       this.convertTimer(this.secondsRun);
-      this.accumulator = this.accumulator + 1000;
-      this.completed = (this.accumulator / this.setMilliseconds) * 100;
+      this.accumulator =(this.secondsRun/this.setSeconds)*100;
+      
+      this.completed = this.accumulator; 
     },
 
     resumenTimer() {
@@ -448,11 +450,21 @@ export default {
         .then((response) => {
           this.$store.commit("warehouse/getRegisters");
           this.$store.commit("warehouse/getUsers");
+          this.$q.notify({
+            color: "purple",
+            message: `register created`,
+            icon: "announcement",
+          });
           console.log(response.data);
         })
         .catch((error) => {
           this.$store.commit("warehouse/getRegisters");
           console.log(error);
+          this.$q.notify({
+            color: "indigo",
+            message: `register created offline`,
+            icon: "announcement",
+          });
         });
     },
     pendingDialog(payload) {

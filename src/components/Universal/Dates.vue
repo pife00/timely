@@ -45,6 +45,7 @@ export default {
             startDay: startDay,
             endToday: endToday._d,
           };
+          console.log(el);
           this.$emit("date", el);
           return el;
         } else {

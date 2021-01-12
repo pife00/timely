@@ -35,7 +35,8 @@
         <q-btn
           @click="resetPersonStore"
           class="large-screen-only"
-          label="users"
+          icon="account_box"
+          size="18px"
           to="/users"
         />
       </q-toolbar>
