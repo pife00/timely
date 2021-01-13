@@ -143,7 +143,7 @@ export default {
 
     filterByPerson(payload){
 
-     return this.users.filter(el=>{
+     return this.order.filter(el=>{
         return el.name == payload
       });
      

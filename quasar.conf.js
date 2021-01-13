@@ -62,7 +62,7 @@ module.exports = function (/* ctx */) {
       },
       vueRouterMode: 'hash', // available values: 'hash', 'history'
       env:{
-        API:API_PRODUCTION
+        API:API_LOCAL
       },
       // transpile: false,
 

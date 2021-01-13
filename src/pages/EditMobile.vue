@@ -5,6 +5,10 @@
         <small class="text-h6 text-purple-6">Name</small>
         <q-input v-model="articule[0].name" label="Name" />
       </div>
+      <div>
+        <small class="text-h6 text-purple-6">Category</small>
+        <q-input v-model="articule[0].category" label="Category" />
+      </div>
       <div class="q-pt-sm">
         <small class="text-h6 text-purple-6">Time</small>
       </div>
@@ -20,6 +24,7 @@
       </div>
       <div class="row">
         <q-input v-model="articule[0].minutes" label="Quantity" />
+        <q-input v-model="articule[0].time_left" label="Time Left" />
         <q-input v-model="articule[0].earn" label="Earn" />
       </div>
       <div class="q-gutter-sm q-pa-sm">

@@ -239,6 +239,13 @@
                 dense
                 :input-style="{ textAlign: 'center' }"
               />
+
+              <q-input
+                v-model="articule.time_left"
+                color="purple"
+                dense
+                :input-style="{ textAlign: 'center' }"
+              />
             </div>
             <div class="col-2 text-center large-screen-only">
               <p class="text-h6">Earn</p>
