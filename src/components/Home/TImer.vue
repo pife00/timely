@@ -94,7 +94,9 @@
               />
             </div>
           </div>
-          <div class="text-h6 q-pt-sm">{{ name }}</div>
+          <div class="text-h6 q-pt-sm content-center">
+          <name :provisionalName="name" mode="home" v-on:name="getName"></name>
+          </div>
           <div class="text-h6">PC {{ PC }}</div>
           <div class="text-h6">
             <q-circular-progress
@@ -105,7 +107,43 @@
               class="q-ma-md"
             >
               <div class="text-h5 text-weight-light">{{ minutes }} : {{ seconds }}</div>
+              <q-separator color="orange" />
+              <div class="text-subtitle1 text-weight-light">{{ time_end_local }}</div>
             </q-circular-progress>
+          </div>
+          <div class="row ">
+            <div class="col-4">
+              <q-badge style="height:20px;" transparent align="middle" color="purple-7">
+              <q-input dark
+              borderless
+              v-model="minutesAccumalator"
+              label-color="white"
+              color="white"
+              :input-style="{
+                fontSize:'17px',
+                textAlign: 'center',
+                fontWeight: 'light',
+              }"
+              />
+              </q-badge>
+            </div>
+            <div class="col-4"></div>
+            <div class="col-4 text-right">
+              <q-badge style="height:20px;" transparent align="middle" color="purple-7">
+              <q-input dark
+              borderless
+              disable
+              v-model="valueEarn"
+              label-color="white"
+              color="white"
+              :input-style="{
+                fontSize:'17px',
+                textAlign: 'center',
+                fontWeight: 'light',
+              }"
+              />
+              </q-badge>
+            </div>
           </div>
         </q-card-section>
 
@@ -132,7 +170,6 @@ import { uid } from "quasar";
 import { Dialog } from "quasar";
 import name from "src/components/Universal/fields";
 import { Platform } from "quasar";
-//import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
 export default {
@@ -158,7 +195,8 @@ export default {
       /*
        *Timer
        */
-
+      time_end_local: null,
+      time_origin: null,
       time_rest: null,
       time_zero: null,
       seconds: null,
@@ -221,6 +259,8 @@ export default {
 
     startTimer() {
       if (this.minutes != null) {
+        moment.locale("en");
+        this.time_origin = this.minutes;
         this.mode = "timer";
         this.sessionActive();
         this.timerRun = true;
@@ -229,6 +269,9 @@ export default {
         this.setMinutes = parseInt(this.minutes);
         this.minutesAccumalator = this.minutesAccumalator + this.setMinutes;
         this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
+
+        this.time_end_local = new Date().getTime() + this.setMilliseconds;
+        this.time_end_local = moment(this.time_end_local).format("LT");
 
         if (this.name == null) {
           this.name = "Anonymous";
@@ -276,13 +319,15 @@ export default {
       }
 
       this.convertTimer(this.secondsRun);
-      this.accumulator =(this.secondsRun/this.setSeconds)*100;
-      
-      this.completed = this.accumulator; 
+      this.accumulator = (this.secondsRun / this.setSeconds) * 100;
+
+      this.completed = this.accumulator;
     },
 
     resumenTimer() {
       if (this.session) {
+        this.time_end_local = new Date().getTime() + this.setMilliseconds;
+        this.time_end_local = moment(this.time_end_local).format("LT");
         this.sessionStart = Date.now() - this.secondsRun * 1000;
         this.interval = setInterval(this.timer, 1000);
         this.timerRun = true;

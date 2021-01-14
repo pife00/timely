@@ -15,7 +15,7 @@
         <q-card-section class="my-card" :class="timerActive">
           <div class="text-h6">PC {{ PC }}</div>
           <div class="text-h6">
-            <name v-on:name="getName"></name>
+            <name :provisionalName="name" mode="home" v-on:name="getName"></name>
             <q-select
               dark
               label-color="white"
@@ -87,7 +87,6 @@ import moment from "moment";
 import { uid } from "quasar";
 import { Dialog } from "quasar";
 import name from "src/components/Universal/fields";
-//import worker from "../../statics/js/time.worker";
 import { Notify } from "quasar";
 import Pending from "./Pending.vue";
 export default {
