@@ -53,6 +53,33 @@
             >
               <div class="text-h4 text-weight-light">{{ minutes }} : {{ seconds }}</div>
             </q-circular-progress>
+
+            <div class="row ">
+            <div class="col-4">
+            
+            </div>
+            <div class="col-4">
+              <div class="col-4">
+             
+            </div>
+            </div>
+            <div class="col-4 text-right">
+              <q-badge style="height:20px;" transparent align="middle" color="orange-5">
+              <q-input 
+              borderless
+              disable
+              v-model="valueEarn"
+              label-color="white"
+              
+              :input-style="{
+                fontSize:'20px',
+                textAlign: 'center',
+                fontWeight: 'bold',
+              }"
+              />
+              </q-badge>
+            </div>
+          </div>
           </div>
         </q-card-section>
 
@@ -152,8 +179,9 @@ export default {
       }
     },
     valueEarn() {
-      if (this.accumulator) {
-        let value = Math.round(this.accumulator * this.moneyPerMinutes);
+      if (this.secondsRun) {
+        this.accumulator = this.secondsRun * 1000
+        let value = Math.round( this.accumulator * this.moneyPerMinutes);
         return value;
       }
     },
@@ -207,8 +235,6 @@ export default {
       this.secondsRun = parseInt((new Date().getTime() - this.sessionStart) / 1000);
 
       this.convertTimer(this.secondsRun);
-
-      this.accumulator = this.accumulator + 1000;
     },
 
     sessionActive() {

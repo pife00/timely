@@ -75,16 +75,18 @@
       <q-card class="my-card">
         <q-card-section :class="timerActive">
           <div class="row">
-            <div class="col-6 text-left">
+            <div class="col-4 text-left">
               <q-btn
                 flat
                 :disable="timerRun"
                 @click="sessionSave"
                 class="text-orange"
-                icon="save"
+                icon="pending"
               />
             </div>
-            <div class="col-6 text-right">
+            <div class="col-4 text-left">
+            </div>
+            <div class="col-4 text-right">
               <q-btn
                 :disable="timerRun"
                 flat
@@ -224,7 +226,7 @@ export default {
       categoryOptions: ["In come", "Debt", "Pending"],
       status: null,
       moneyPerMinutes: 33.33333333333333,
-      minutesAccumalator: null,
+      minutesAccumalator: 0,
       name: null,
     };
   },
@@ -263,11 +265,12 @@ export default {
         this.time_origin = this.minutes;
         this.mode = "timer";
         this.sessionActive();
+       // this.minutesAccumalator = parseInt(this.minutesAccumalator);
         this.timerRun = true;
         this.setSeconds = this.minutes * 60;
 
         this.setMinutes = parseInt(this.minutes);
-        this.minutesAccumalator = this.minutesAccumalator + this.setMinutes;
+        this.minutesAccumalator = parseInt(this.minutesAccumalator) + this.setMinutes;
         this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
 
         this.time_end_local = new Date().getTime() + this.setMilliseconds;
@@ -359,8 +362,9 @@ export default {
       this.sessionEnd = null;
       this.status = null;
       this.time_left = null;
-      this.minutesAccumalator = null;
+      this.minutesAccumalator = 0;
       this.name = null;
+      this.category = null;
     },
 
     sessionActive() {

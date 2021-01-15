@@ -12,7 +12,7 @@
           <card title="Debt" :value="debt"></card>
         </div>
         <hr />
-        <chart></chart>
+        <chart :today="today"></chart>
       </div>
     </div>
   </div>

@@ -45,6 +45,9 @@ export default {
         }
       }
     },
+    provisionalName(newValue){
+      this.choose = newValue;
+    }
   },
   created() {
 

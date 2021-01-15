@@ -1,45 +1,107 @@
 <template>
-  <div>
+  <div v-if="dataKit">
     <vue-frappe
       id="test"
-      :labels="[
-        '12am-3am',
-        '3am-6am',
-        '6am-9am',
-        '9am-12pm',
-        '12pm-3pm',
-        '3pm-6pm',
-        '6pm-9pm',
-        '9pm-12am',
-      ]"
-      title="My Awesome Chart"
+      :labels="times"
+      title="Activity"
       type="axis-mixed"
       :height="300"
-      :colors="['purple', '#ffa3ef', 'light-blue']"
-      :dataSets="this.data"
+      :colors="['purple', '#ffa3ef', 'grey']"
+      :dataSets="this.dataKit"
     >
     </vue-frappe>
   </div>
 </template>
 <script>
+import moment from "moment";
 export default {
   name: "chart",
+  props: ["today"],
   data() {
     return {
-        data: [{
-                    name: "Some Data", chartType: 'bar',
-                    values: [25, 40, 30, 35, 8, 52, 17, -4]
-                },
-                {
-                    name: "Another Set", chartType: 'bar',
-                    values: [25, 50, -10, 15, 18, 32, 27, 14]
-                },
-                {
-                    name: "Yet Another", chartType: 'line',
-                    values: [15, 20, -3, -15, 58, 12, -17, 37]
-                }]
-
     };
+  },
+  computed: {
+    todayComputed: {
+      get: function () {
+        return this.today;
+      },
+    },
+
+    dataKit: {
+      get: function () {
+        if (this.todayComputed != null) {
+          return this.kit();
+        }
+      },
+    },
+
+    inCome:{
+      get: function () {
+        if(this.todayComputed){
+          return this.kitCategory('In come','earn')
+        }
+      }
+    },
+    pending:{
+      get: function () {
+        if(this.todayComputed){
+          return this.kitCategory('Pending','earn')
+        }
+      }
+    },
+    debt:{
+      get: function () {
+        if(this.todayComputed){
+          return this.kitCategory('Debt','earn')
+        }
+      }
+    },
+    times:{
+      get: function () {
+        if(this.todayComputed){
+          return this.kitTimes();
+        }
+      }
+    }
+  },
+  methods: {
+    kit() {
+
+      return [
+        {
+          name: "In come",
+          chartType: "bar",
+          values: [...this.inCome],
+        },
+        {
+          name: "Pending",
+          chartType: "bar",
+          values: [...this.pending],
+        },
+        {
+          name: "Debt",
+          chartType: "bar",
+          values: [...this.debt],
+        },
+      ];
+    },
+
+    kitCategory(category,value){
+      console.log(category,value)
+      return this.todayComputed.map(el=>{
+        if(el.category == category){
+          return el[value];
+        }else{
+          return 0;
+        }
+      })
+    },
+    kitTimes(){
+      return this.todayComputed.map(el=>{
+        return moment(el.time_start).format("LT") +' | '+el.name;
+      });
+    }
   },
 };
 </script>
