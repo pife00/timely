@@ -85,6 +85,13 @@
               />
             </div>
             <div class="col-4 text-left">
+              <q-btn
+                flat
+                :disable="timerRun"
+                @click="sessionDebt"
+                class="text-orange"
+                icon="card_travel"
+              />
             </div>
             <div class="col-4 text-right">
               <q-btn
@@ -198,6 +205,7 @@ export default {
        *Timer
        */
       time_end_local: null,
+      time_end_local_unix:null,
       time_origin: null,
       time_rest: null,
       time_zero: null,
@@ -274,6 +282,8 @@ export default {
         this.setMilliseconds = this.getMillisecondsFromMinutes(this.setMinutes);
 
         this.time_end_local = new Date().getTime() + this.setMilliseconds;
+        this.time_end_local_unix = new Date().getTime() + this.setMilliseconds;
+        
         this.time_end_local = moment(this.time_end_local).format("LT");
 
         if (this.name == null) {
@@ -284,7 +294,7 @@ export default {
         if (this.category == null) {
           this.category = this.categoryOptions[0];
         }
-
+        this.newNotify();
         this.interval = setInterval(this.timer, 1000);
       }
     },
@@ -365,6 +375,8 @@ export default {
       this.minutesAccumalator = 0;
       this.name = null;
       this.category = null;
+      this.time_end_local_unix = 0
+      this.time_end_local = null;
     },
 
     sessionActive() {
@@ -399,6 +411,15 @@ export default {
           let register = this.newRegister();
           this.dialogResume(register);
         }
+      }
+    },
+
+    sessionDebt() {
+      if (this.session) {
+          this.category = 'Debt'
+          this.status = "still debt";
+          let register = this.newRegister();
+          this.dialogResume(register);
       }
     },
 
@@ -524,6 +545,24 @@ export default {
     openMode(payload) {
       this.$emit("openMode", payload);
     },
+
+    newNotify(){
+      let formData = new FormData();
+
+      formData.append("pc", this.PC);
+      formData.append("name", this.name);
+      formData.append("date", this.time_end_local_unix);
+      formData.append("minutes", this.minutesAccumalator);
+      formData.append("earn", this.valueEarn);
+      formData.append("category", this.category);
+      this.$axios
+        .post(`${process.env.API}/api/new-notify`, formData)
+        .then((response)=>{
+          console.log(response)
+        }).catch(error=>{
+          console.log(error);
+        });
+    }
   },
 };
 </script>
