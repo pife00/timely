@@ -26,8 +26,6 @@
 
 <script>
 import card from "src/components/Home/Card.vue";
-import { Dialog } from "quasar";
-import { Platform } from "quasar";
 export default {
   name: "PageHome",
   components: {

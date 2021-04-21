@@ -88,7 +88,6 @@ export default {
     },
 
     kitCategory(category,value){
-      console.log(category,value)
       return this.todayComputed.map(el=>{
         if(el.category == category){
           return el[value];

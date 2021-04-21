@@ -3,7 +3,7 @@
     <div
       v-if="!timerFake"
       id="myCard"
-      class="q-pa-md row items-start q-gutter-md small-screen"
+      class="q-pa-md q-gutter-sm"
     >
       <q-card>
         <div class="q-gutter-sm">
@@ -37,7 +37,7 @@
     <div
       v-if="timerFake"
       id="myCard"
-      class="q-pa-md row items-start q-gutter-md small-screen"
+      class="q-pa-md q-gutter-sm"
     >
       <q-card class="my-card">
         <q-card-section :class="timerActive">

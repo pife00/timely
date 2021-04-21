@@ -3,7 +3,7 @@
     <div
       v-if="!timerFake"
       id="myCard"
-      class="q-pa-md row items-start q-gutter-md small-screen"
+      class="q-pa-md q-gutter-sm"
     >
       <q-card>
         <div class="q-gutter-sm">
@@ -70,7 +70,7 @@
     <div
       v-if="timerFake"
       id="myCard"
-      class="q-pa-md row items-start q-gutter-md small-screen"
+      class="q-pa-md q-gutter-sm"
     >
       <q-card class="my-card">
         <q-card-section :class="timerActive">
@@ -84,7 +84,7 @@
                 icon="pending"
               />
             </div>
-            <div class="col-4 text-left">
+            <div class="col-4 text-center">
               <q-btn
                 flat
                 :disable="timerRun"
@@ -176,10 +176,7 @@
 <script>
 import moment from "moment";
 import { uid } from "quasar";
-import { Dialog } from "quasar";
 import name from "src/components/Universal/fields";
-import { Platform } from "quasar";
-import { Notify } from "quasar";
 import Pending from "./Pending.vue";
 export default {
   name: "timer",
@@ -383,6 +380,9 @@ export default {
       this.session = true;
       this.sessionStart = Date.now();
       this.date = Date.now();
+      if(this.time_start === null){
+        this.time_start = Date.now();
+      }
     },
 
     sessionContinue() {
@@ -394,7 +394,6 @@ export default {
         this.accumulator = 0;
         this.completed = null;
         this.setMilliseconds = null;
-        // this.setMinutes = null;
         this.interval = null;
       }
     },
@@ -450,7 +449,7 @@ export default {
         pc: this.PC,
         name: this.name,
         date: this.date,
-        time_start: this.date,
+        time_start: this.time_start,
         time_end: this.sessionEnd,
         minutes: this.minutesAccumalator,
         earn: this.valueEarn,
